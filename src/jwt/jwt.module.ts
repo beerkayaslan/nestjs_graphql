@@ -2,9 +2,12 @@ import { Module } from '@nestjs/common';
 import { JwtService } from './jwt.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule as NestJwtModule } from '@nestjs/jwt';
+import { Jwt, JwtSchema } from './schema/jwt.schema';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
+    MongooseModule.forFeature([{ name: Jwt.name, schema: JwtSchema }]),
     NestJwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

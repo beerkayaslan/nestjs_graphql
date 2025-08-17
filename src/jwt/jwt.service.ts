@@ -1,19 +1,45 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
-import type { JwtSignOptions } from '@nestjs/jwt';
+import { InjectModel } from '@nestjs/mongoose';
+import { randomUUID } from 'crypto';
+import { Jwt, JwtDocument } from './schema/jwt.schema';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class JwtService {
-  constructor(private readonly jwtService: NestJwtService) {}
+  constructor(
+    private readonly jwtService: NestJwtService,
+    @InjectModel(Jwt.name) private readonly jwtModel: Model<JwtDocument>,
+  ) {}
 
   async signJwt({
     payload,
-    options,
+    expires,
   }: {
     payload: object;
-    options?: JwtSignOptions;
+    expires?: number;
   }): Promise<string> {
-    return this.jwtService.signAsync(payload, options);
+    const uuid = randomUUID();
+    const expiresIn = expires ?? Date.now() + 3600 * 1000;
+
+    const jwt = await this.jwtService.signAsync(payload, {
+      jwtid: uuid,
+      expiresIn,
+    });
+
+    const token = new this.jwtModel({
+      jwtid: uuid,
+      iat: Date.now(),
+      exp: expiresIn,
+    });
+
+    try {
+      await token.save();
+    } catch (error) {
+      throw new Error(`Error saving JWT token: ${error}`);
+    }
+
+    return jwt;
   }
 
   async verifyJwt<T extends object>(token: string): Promise<T> {
