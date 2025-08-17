@@ -1,4 +1,4 @@
-import { Resolver, Query, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Args, Int } from '@nestjs/graphql';
 import { User } from './schema/user.schema';
 import { UserService } from './user.service';
 
@@ -6,13 +6,11 @@ import { UserService } from './user.service';
 export class UserResolver {
   constructor(private readonly userService: UserService) {}
 
-  @Query(() => [User], { name: 'users' })
-  async users(): Promise<User[]> {
-    return this.userService.findAll();
-  }
-
-  @Query(() => User, { name: 'user', nullable: true })
-  async user(@Args('id', { type: () => ID }) id: string): Promise<User | null> {
-    return this.userService.findById(id);
+  @Query(() => [User])
+  async users(
+    @Args('page', { type: () => Int, defaultValue: 1 }) page: number,
+    @Args('limit', { type: () => Int, defaultValue: 10 }) limit: number,
+  ) {
+    return this.userService.findAll(page, limit);
   }
 }
